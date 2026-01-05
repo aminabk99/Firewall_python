@@ -1,59 +1,72 @@
 import random
 import time
 from collections import defaultdict
+import os
+
+# Configurations
+THRESHOLD = 5  # Block if more than 5 packets in one session
+WHITELIST = {"192.168.1.1", "127.0.0.1"} # Trusted IPs
+MALICIOUS_SIGNATURE = "GET /scripts/root.exe" # Example: Nimda worm signature
 
 def log_event(ip, action, reason=""):
-    """Logs activity with an optional reason (like DoS Detection)."""
-    with open("firewall_log.txt", "a") as f:
-        timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
-        reason_str = f" - REASON: {reason}" if reason else ""
-        f.write(f"[{timestamp}] IP: {ip} - ACTION: {action}{reason_str}\n")
-
-def run_firewall_simulation():
-    # Setup Initial Rules and Thresholds
-    blacklist = set(["192.168.1.5", "10.0.0.50"]) 
-    packet_counts = defaultdict(int) # Tracks how many packets each IP sends
-    THRESHOLD = 3  # If an IP sends more than 3 packets in this simulation, block it
+    """Creates a logs folder and saves event details with timestamps."""
+    if not os.path.exists("logs"):
+        os.makedirs("logs") #
     
-    print("--- Python Firewall & DoS Blocker Active ---")
-    print(f"Threshold: {THRESHOLD} packets per session | Initial Blacklist: {blacklist}\n")
+    filename = f"logs/firewall_{time.strftime('%Y%m%d')}.txt"
+    with open(filename, "a") as f:
+        timestamp = time.strftime("%H:%M:%S")
+        f.write(f"[{timestamp}] IP: {ip} | ACTION: {action} | REASON: {reason}\n")
+
+def is_malicious_payload(payload):
+    """Simple string-based signature detection."""
+    return MALICIOUS_SIGNATURE in payload #
+
+def run_firewall():
+    blacklist = set()
+    packet_counts = defaultdict(int)
     
-    # Simulate a larger stream of traffic to test the "flooding" logic
-    for i in range(1, 21):
-        # We simulate a "Dos Attack" by picking one IP to repeat often
-        if i > 10:
-            incoming_ip = "172.16.0.10" # This IP will flood the system
-        elif random.random() < 0.2:
-            incoming_ip = random.choice(list(blacklist))
-        else:
-            incoming_ip = f"192.168.1.{random.randint(1, 100)}"
+    print("--- Pro Mini Firewall Active ---")
+    print(f"Monitoring for DoS (Threshold: {THRESHOLD}) and Signature Detection...")
 
-        # Check if already blacklisted
-        if incoming_ip in blacklist:
-            action = "BLOCK"
-            reason = "Blacklisted"
-        else:
-            # Increment count and check for DoS (Rate Limiting)
-            packet_counts[incoming_ip] += 1
-            
-            if packet_counts[incoming_ip] > THRESHOLD:
-                action = "BLOCK"
-                reason = "DoS Attack Detected"
-                blacklist.add(incoming_ip) # Dynamically add to blacklist
-            else:
-                action = "ALLOW"
-                reason = ""
+    # Simulating 15 network packets
+    for i in range(1, 16):
 
-        # Logging and Output
-        log_event(incoming_ip, action, reason)
-        status_symbol = "?" if action == "BLOCK" else "?"
-        msg = f"Packet {i:02d}: [{incoming_ip}] -> {status_symbol} {action}"
-        if reason: msg += f" ({reason})"
-        print(msg)
+        # Simulation Logic: Assign random IPs and occasional malicious payloads
+        if i == 5:
+            incoming_ip, payload = "192.168.1.50", "GET /scripts/root.exe" # Malware attempt
+        elif i > 10:
+            incoming_ip, payload = "172.16.0.10", "Normal traffic" # DoS attempt
+        else:
+            incoming_ip, payload = f"192.168.1.{random.randint(1, 20)}", "Normal traffic"
+
+        # 1. Whitelist Check
+        if incoming_ip in WHITELIST:
+            action, reason = "ALLOW", "Whitelisted" #
         
-        time.sleep(0.2)
+        # 2. Blacklist Check
+        elif incoming_ip in blacklist:
+            action, reason = "BLOCK", "Blacklisted"
 
-    print("\nSimulation Complete. Check 'firewall_log.txt' to see the dynamic blocks.")
+        # 3. Signature Detection Check
+        elif is_malicious_payload(payload):
+            action, reason = "BLOCK", "Malicious Signature (Nimda)"
+            blacklist.add(incoming_ip) #
+
+        # 4. DoS Protection 
+        else:
+            packet_counts[incoming_ip] += 1
+            if packet_counts[incoming_ip] > THRESHOLD:
+                action, reason = "BLOCK", "DoS Attack Detected"
+                blacklist.add(incoming_ip)
+            else:
+                action, reason = "ALLOW", ""
+
+        # Log and Print
+        log_event(incoming_ip, action, reason)
+        status = "?" if action == "BLOCK" else "?"
+        print(f"[{i:02d}] {incoming_ip} -> {status} {action} {f'({reason})' if reason else ''}")
+        time.sleep(0.3)
 
 if __name__ == "__main__":
-    run_firewall_simulation()
+    run_firewall()
