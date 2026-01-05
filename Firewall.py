@@ -14,15 +14,15 @@ def check_traffic(ip, blacklist):
     return "ALLOW"
 
 def run_firewall_simulation():
-    # Define our 'Bad Actors' list
+    # Defining our 'Bad Actors' list
     blacklist = ["192.168.1.5", "192.168.1.10", "10.0.0.50", "172.16.0.5"]
     
     print("--- Python Firewall Simulator Active ---")
     print(f"Monitoring traffic. Blacklisted IPs: {blacklist}\n")
     
-    # Simulate a stream of 10 incoming packets
+    # Simulating a stream of 10 incoming packets
     for i in range(1, 11):
-        # Generate a random IP (occasionally choosing one from the blacklist)
+        # Generate a random IP (will choose one from the blacklist from time to time)
         if random.random() < 0.3:
             incoming_ip = random.choice(blacklist)
         else:
@@ -34,7 +34,7 @@ def run_firewall_simulation():
         status_symbol = "?" if action == "BLOCK" else "?"
         print(f"Packet {i:02d}: [{incoming_ip}] -> Result: {status_symbol} {action}")
         
-        # Small delay to simulate real-time processing
+        # Creating a delay to simulate real time processing
         time.sleep(0.5)
 
     print("\nSimulation Complete. Check 'firewall_log.txt' for the full history.")
