@@ -74,6 +74,7 @@ MALICIOUS_SIGNATURE = "GET /scripts/root.exe"  # Nimda worm signature
 <img width="352" height="214" alt="image" src="https://github.com/user-attachments/assets/a145119d-e6d5-44bf-8a87-d82d42f01abf" />
 
 
+
 <div align="center">
   <sub>Built by <a href="https://github.com/aminabk99">Amina Bilal</a> · <a href="https://linkedin.com/in/amina-bilal-926340382">LinkedIn</a></sub>
 </div>
